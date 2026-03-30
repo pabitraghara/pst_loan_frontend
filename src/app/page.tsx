@@ -23,7 +23,7 @@ export default function Home() {
         <section className="relative bg-white pt-12 pb-20 md:pt-20 md:pb-32 px-4 overflow-hidden">
           {/* Hero background image - replace /hero-family.jpg with your actual image */}
           <Image
-            src="https://media.istockphoto.com/id/2191305802/photo/cheerful-elderly-woman-embraced-by-a-loving-family-member-at-home.jpg?s=612x612&w=0&k=20&c=HxC43ICCVA6DAyoAx3bL6fWt9Kz3NoAqlmjONkX89hk="
+            src="/bg-image.jpg"
             alt="Happy family feeling relieved after securing a personal loan"
             fill
             className="object-cover object-center"

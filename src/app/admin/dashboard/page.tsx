@@ -36,6 +36,9 @@ export default function AdminDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const router = useRouter();
 
   useEffect(() => {
@@ -44,20 +47,37 @@ export default function AdminDashboard() {
       router.push("/admin/login");
       return;
     }
-    fetchLeads(token);
-  }, [router]);
 
-  const fetchLeads = async (token: string) => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchLeads(token, searchTerm, selectedDate);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [router, searchTerm, selectedDate]);
+
+  const fetchLeads = async (
+    token: string,
+    search: string = "",
+    date: string = "",
+  ) => {
+    const params: any = {};
+    if (search.trim()) params.search = search.trim();
+    if (date) params.date = date;
     try {
+      setIsLoading(true);
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/leads`,
         {
           headers: { Authorization: `Bearer ${token}` },
+          params,
         },
       );
       setLeads(response.data.leads);
     } catch (error) {
-      router.push("/admin/login");
+      // If unauthorized, redirect to login
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        router.push("/admin/login");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -68,13 +88,22 @@ export default function AdminDashboard() {
     router.push("/admin/login");
   };
 
-  const filteredLeads = leads.filter(
-    (lead) =>
-      lead.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.unique_lead_id.includes(searchTerm),
-  );
+  // Removed client-side filtering as we now use server-side search
+  const filteredLeads = leads;
+
+  // const adminUser = async (email: string) => {
+  //   const response = await axios.post(
+  //     `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/admin`,
+  //     {
+  //       email,
+  //     },
+  //   );
+  //   console.log(response.data);
+  // };
+
+  // useEffect(() => {
+  //   adminUser(userEmail);
+  // }, []);
 
   if (isLoading)
     return (
@@ -118,14 +147,33 @@ export default function AdminDashboard() {
               Manage and review internal loan applications.
             </p>
           </div>
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#003B5C] transition-colors" />
-            <input
-              placeholder="Search by name, email or ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-sm focus:outline-none focus:border-[#003B5C] transition-all shadow-sm"
-            />
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <div className="relative w-full md:w-96 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#003B5C] transition-colors" />
+              <input
+                placeholder="Search by name, email or ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-sm focus:outline-none focus:border-[#003B5C] transition-all shadow-sm"
+              />
+            </div>
+            <div className="relative w-full md:w-48 group">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#003B5C] transition-colors" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-sm focus:outline-none focus:border-[#003B5C] transition-all shadow-sm"
+              />
+            </div>
+            <div>
+              <button
+                onClick={() => router.push("/admin/leads/new")}
+                className="bg-[#003B5C] text-white hover:bg-[#002a42] font-bold py-4 px-6 rounded-2xl transition-colors"
+              >
+                Add Lead
+              </button>
+            </div>
           </div>
         </div>
 
